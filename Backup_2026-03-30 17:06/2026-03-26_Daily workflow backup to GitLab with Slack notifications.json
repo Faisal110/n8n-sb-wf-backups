@@ -1,0 +1,542 @@
+{
+  "updatedAt": "2026-03-26T13:38:25.385Z",
+  "createdAt": "2026-03-26T13:38:25.385Z",
+  "id": "qkMNTDWTIbXNYdkT",
+  "name": "2026-03-26_Daily workflow backup to GitLab with Slack notifications",
+  "active": false,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "filters": {},
+        "requestOptions": {}
+      },
+      "id": "05ee377d-5402-46ee-81b4-c56e6115ecd4",
+      "name": "Get All Workflows",
+      "type": "n8n-nodes-base.n8n",
+      "position": [
+        1728,
+        496
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "3d21f751-35bf-439c-8536-ff5e8968672e",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              },
+              "leftValue": "={{ $json.isArchived }}",
+              "rightValue": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "f107d96b-26cf-47ad-97fc-83f64c7b621e",
+      "name": "Discard Archived Workflows",
+      "type": "n8n-nodes-base.filter",
+      "position": [
+        1888,
+        496
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "operation": "toJson",
+        "mode": "each",
+        "options": {
+          "format": true
+        }
+      },
+      "id": "67333676-710a-4721-82a4-f9288366c6d0",
+      "name": "Convert to File",
+      "type": "n8n-nodes-base.convertToFile",
+      "position": [
+        2464,
+        592
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "9798deb6-300a-48ff-9f5c-a581b2d941a7",
+              "operator": {
+                "type": "array",
+                "operation": "contains",
+                "rightType": "any"
+              },
+              "leftValue": "={{ $('List of Names').item.json.name }}",
+              "rightValue": "={{ $('Process Each File').item.json.name }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2d508a48-be41-40cd-be68-2aad83038cce",
+      "name": "If File Exists",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        2624,
+        592
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "558377f5-54a6-4dd2-872a-dd1fa8f1fc9f",
+              "name": "project_owner",
+              "type": "string",
+              "value": "PROJECT_OWNER e.g. mookielian"
+            },
+            {
+              "id": "063bbfbf-697e-4825-8c68-af5cc7b6aa2d",
+              "name": "project_name",
+              "type": "string",
+              "value": "PROJECT_NAME e.g. n8n"
+            },
+            {
+              "id": "7938d2e2-b203-45fc-8432-f9f3ac241946",
+              "name": "branch",
+              "type": "string",
+              "value": "main"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "b816f0b9-26b1-438d-877a-d1d4ad86fe89",
+      "name": "Configuration",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        1232,
+        496
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "name"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "517ef436-5323-4ffc-8ead-5c303930987e",
+      "name": "List of Names",
+      "type": "n8n-nodes-base.aggregate",
+      "position": [
+        1568,
+        496
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "owner": "={{ $('Configuration').item.json.project_owner }}",
+        "repository": "={{ $('Configuration').item.json.project_name }}",
+        "filePath": "={{ $('Process Each File').item.json.name }}",
+        "binaryData": true,
+        "commitMessage": "=File created! {{ $('Process Each File').item.json.name }}",
+        "branch": "={{ $('Configuration').item.json.branch }}"
+      },
+      "id": "5befe173-4171-4107-be94-4c5ad235ca76",
+      "name": "Create New File - GitLab",
+      "type": "n8n-nodes-base.gitlab",
+      "position": [
+        2784,
+        672
+      ],
+      "typeVersion": 1,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "edit",
+        "owner": "={{ $('Configuration').item.json.project_owner }}",
+        "repository": "={{ $('Configuration').item.json.project_name }}",
+        "filePath": "={{ $('Process Each File').item.json.name }}",
+        "binaryData": true,
+        "commitMessage": "=File was updated! {{ $('Process Each File').item.json.name }}",
+        "branch": "={{ $('Configuration').item.json.branch }}"
+      },
+      "id": "20270a8c-ac47-4449-a506-618fe2362e17",
+      "name": "Update File - GitLab",
+      "type": "n8n-nodes-base.gitlab",
+      "position": [
+        2784,
+        480
+      ],
+      "typeVersion": 1,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "operation": "list",
+        "owner": "={{ $('Configuration').item.json.project_owner }}",
+        "repository": "={{ $('Configuration').item.json.project_name }}",
+        "returnAll": true,
+        "additionalParameters": {}
+      },
+      "id": "62bc4120-f641-456d-ae3c-2d450941ebe6",
+      "name": "List All Files - GitLab",
+      "type": "n8n-nodes-base.gitlab",
+      "position": [
+        1392,
+        496
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 12
+            }
+          ]
+        }
+      },
+      "id": "2e8a6259-5530-4e15-babf-febbad2095ac",
+      "name": "Daily Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "position": [
+        1088,
+        496
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "de6637b3-1a90-4683-b785-ee168de26cbe",
+      "name": "Process Each File",
+      "type": "n8n-nodes-base.splitInBatches",
+      "position": [
+        2080,
+        496
+      ],
+      "typeVersion": 3
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const { createdAt, updatedAt, id, name, active, isArchived, ...rest } = item.json;\n  return { json: rest };\n});"
+      },
+      "id": "17b4693e-d52c-4f1a-97fa-2c42da170df3",
+      "name": "Remove Unwanted Fields",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        2288,
+        592
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "C09KF70UXL3",
+          "cachedResultName": "backup-notifications"
+        },
+        "text": "=*Successful Backup!*\n\n- Execution ID: {{ $execution.id }}\n- Mode: {{ $execution.mode }}\n- Timestamp(Workflow Region): {{$now.toFormat('yyyy-MM-dd HH:mm:ss')}}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "d96386b2-75df-49c1-9645-f50a96c92d23",
+      "name": "Send Message to Channel",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        2288,
+        400
+      ],
+      "webhookId": "7204c9cc-0e71-46ce-9760-3c49075bc472",
+      "executeOnce": true,
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "C09KF70UXL3",
+          "cachedResultName": "backup-notifications"
+        },
+        "text": "=*Failed creating a new file - GitLab.*\n\n- File Name: {{ $('Process Each File').item.json.name }}\n- Error: {{ $json.error }}\n- Workflow State: _active={{ $('Process Each File').item.json.active }}_\n- Execution ID: {{ $execution.id }}\n- Mode: {{ $execution.mode }}\n- Timestamp(Workflow Region): {{$now.toFormat('yyyy-MM-dd HH:mm:ss')}}",
+        "otherOptions": {}
+      },
+      "id": "25cc4169-c68e-4ed8-a85c-43e432cf5dbf",
+      "name": "New File - Failed",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        2976,
+        688
+      ],
+      "webhookId": "5354db33-36b0-4f5b-ba5e-4d902660a1dd",
+      "typeVersion": 2.3
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "C09KF70UXL3",
+          "cachedResultName": "backup-notifications"
+        },
+        "text": "=*Failed updating specified file - GitLab.*\n\n- File Name: {{ $('Process Each File').item.json.name }}\n- Error: {{ $json.error }}\n- Workflow State: _active={{ $('Process Each File').item.json.active }}_\n- Execution ID: {{ $execution.id }}\n- Mode: {{ $execution.mode }}\n- Timestamp(Workflow Region): {{$now.toFormat('yyyy-MM-dd HH:mm:ss')}}",
+        "otherOptions": {}
+      },
+      "id": "2a2bad0d-af10-494b-aa21-48c2b1f277c3",
+      "name": "Update File - Failed",
+      "type": "n8n-nodes-base.slack",
+      "position": [
+        2976,
+        496
+      ],
+      "webhookId": "5354db33-36b0-4f5b-ba5e-4d902660a1dd",
+      "typeVersion": 2.3
+    }
+  ],
+  "connections": {
+    "Configuration": {
+      "main": [
+        [
+          {
+            "node": "List All Files - GitLab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Trigger": {
+      "main": [
+        [
+          {
+            "node": "Configuration",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List of Names": {
+      "main": [
+        [
+          {
+            "node": "Get All Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If File Exists": {
+      "main": [
+        [
+          {
+            "node": "Update File - GitLab",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create New File - GitLab",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "If File Exists",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get All Workflows": {
+      "main": [
+        [
+          {
+            "node": "Discard Archived Workflows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "New File - Failed": {
+      "main": [
+        [
+          {
+            "node": "Process Each File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Each File": {
+      "main": [
+        [
+          {
+            "node": "Send Message to Channel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Remove Unwanted Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update File - Failed": {
+      "main": [
+        [
+          {
+            "node": "Process Each File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update File - GitLab": {
+      "main": [
+        [
+          {
+            "node": "Process Each File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update File - Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remove Unwanted Fields": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List All Files - GitLab": {
+      "main": [
+        [
+          {
+            "node": "List of Names",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create New File - GitLab": {
+      "main": [
+        [
+          {
+            "node": "Process Each File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "New File - Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Discard Archived Workflows": {
+      "main": [
+        [
+          {
+            "node": "Process Each File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "staticData": null,
+  "meta": null,
+  "pinData": null,
+  "versionId": "bd70e57a-548b-4015-88ae-7957d2a6735f",
+  "activeVersionId": null,
+  "triggerCount": 0,
+  "shared": [
+    {
+      "updatedAt": "2026-03-26T13:38:25.390Z",
+      "createdAt": "2026-03-26T13:38:25.390Z",
+      "role": "workflow:owner",
+      "workflowId": "qkMNTDWTIbXNYdkT",
+      "projectId": "1KoM0NN3xU52WnYD"
+    }
+  ],
+  "activeVersion": null,
+  "tags": []
+}
